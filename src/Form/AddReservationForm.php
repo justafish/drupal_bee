@@ -218,6 +218,8 @@ class AddReservationForm extends FormBase {
           $start_date_open_hour = FALSE;
           $end_date_open_hour = FALSE;
 
+          $in_opening_hours = [];
+
           foreach ($open_hours as $open_hour) {
             if ($open_hour['day'] == $start_date->format('N')) {
               $starthours = OfficeHoursDateHelper::format($open_hour['starthours'], 'H:i');
@@ -252,13 +254,21 @@ class AddReservationForm extends FormBase {
                 }
               }
             }
-          }
 
-          if ((!$start_date_open_hour || !$end_date_open_hour) ||
+            if ((!$start_date_open_hour || !$end_date_open_hour) ||
               !(($start_date >= $start_date_open_hour['start'] && $start_date <= $start_date_open_hour['end']) &&
                 ($end_date >= $end_date_open_hour['start'] && $end_date <= $end_date_open_hour['end']))) {
+              $in_opening_hours[] = FALSE;
+            }
+            else {
+              $in_opening_hours[] = TRUE;
+            }
+          }
+
+          if (!in_array(TRUE, $in_opening_hours)) {
             $form_state->setError($form, $this->t('Please select start and end times within the opening hours.'));
           }
+
         }
       }
 
