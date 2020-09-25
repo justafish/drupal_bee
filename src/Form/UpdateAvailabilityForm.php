@@ -6,6 +6,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\Entity\NodeType;
 use Drupal\node\NodeInterface;
 use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -52,7 +53,9 @@ class UpdateAvailabilityForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, NodeInterface $node = NULL) {
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
     $today = new \DateTime();
 
     $tomorrow = clone($today);
@@ -151,7 +154,9 @@ class UpdateAvailabilityForm extends FormBase {
     $start_date = $values['start_date'];
     $end_date = $values['end_date'];
 
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     if ($bee_settings['bookable_type'] == 'daily') {
       $start_date = new \DateTime($start_date);
@@ -184,7 +189,9 @@ class UpdateAvailabilityForm extends FormBase {
     $start_date = $values['start_date'];
     $end_date = $values['end_date'];
 
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     if ($bee_settings['bookable_type'] == 'daily') {
       $start_date = new \DateTime($start_date);

@@ -10,6 +10,7 @@ use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\bat_event_series\Entity\EventSeries;
 use Drupal\commerce_cart\CartManagerInterface;
 use Drupal\commerce_cart\CartProviderInterface;
+use Drupal\node\Entity\NodeType;
 use Drupal\node\NodeInterface;
 use Drupal\node\Entity\Node;
 use Drupal\office_hours\OfficeHoursDateHelper;
@@ -93,7 +94,9 @@ class AddReservationForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, NodeInterface $node = NULL, EventSeries $bat_event_series = NULL) {
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     $today = new \DateTime();
 
@@ -178,7 +181,9 @@ class AddReservationForm extends FormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
     $node = Node::load($values['node']);
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     $start_date = $values['start_date'];
     $end_date = $values['end_date'];
@@ -295,7 +300,9 @@ class AddReservationForm extends FormBase {
     $start_date = $values['start_date'];
     $end_date = $values['end_date'];
 
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     if ($bee_settings['bookable_type'] == 'daily') {
       $start_date = new \DateTime($start_date);
@@ -454,7 +461,9 @@ class AddReservationForm extends FormBase {
       }
 
       if (isset($values['repeat']) && $values['repeat']) {
-        $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+        $node_type = NodeType::load($node->bundle());
+        assert($node_type instanceof NodeType);
+        $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
         foreach ($node->get('field_availability_' . $bee_settings['bookable_type']) as $unit) {
           if ($unit->entity) {
@@ -514,7 +523,9 @@ class AddReservationForm extends FormBase {
    */
   protected function checkSeriesAvailability($nid, $start, $end, $repeat_frequency, $repeat_until) {
     $node = Node::load($nid);
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     $start = new \DateTime($start);
     $end = new \DateTime($end);
@@ -562,7 +573,9 @@ class AddReservationForm extends FormBase {
   protected function getAvailableUnits($nid, $start_date, $end_date) {
     $node = Node::load($nid);
 
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     $units_ids = [];
     foreach ($node->get('field_availability_' . $bee_settings['bookable_type']) as $unit) {

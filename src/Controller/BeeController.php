@@ -6,6 +6,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\node\Entity\NodeType;
 use Drupal\node\NodeInterface;
 use Drupal\office_hours\OfficeHoursDateHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -45,7 +46,9 @@ class BeeController extends ControllerBase implements ContainerInjectionInterfac
    * Availability calendar page.
    */
   public function availability(NodeInterface $node) {
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     $unit_type = $bee_settings['type_id'];
 

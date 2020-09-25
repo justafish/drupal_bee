@@ -5,6 +5,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\node\Entity\Node;
+use Drupal\node\Entity\NodeType;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\Entity\WebformSubmission;
 use RRule\RRule;
@@ -50,12 +51,14 @@ function bee_webform_form_submit($form, FormStateInterface $form_state) {
       $end_date = $value['end_date'];
 
       $node = Node::load($value['node']);
+      $node_type = NodeType::load($node->bundle());
+      assert($node_type instanceof NodeType);
 
       $available_units = bee_webform_get_available_units_for_node($node, $webform_submission, $bee_element_id);
 
       $events_created = [];
 
-      $bee_settings = \Drupal::config('node.type.' . $node->bundle())->get('bee');
+      $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
       if ($bee_settings['bookable_type'] == 'daily') {
         $booked_state = bat_event_load_state_by_machine_name('bee_daily_booked');
@@ -188,8 +191,9 @@ function bee_webform_get_available_units($values) {
   $start_date = $values['start_date'];
   $end_date = $values['end_date'];
   $node = Node::load($values['node']);
-
-  $bee_settings = \Drupal::config('node.type.' . $node->bundle())->get('bee');
+  $node_type = NodeType::load($node->bundle());
+  assert($node_type instanceof NodeType);
+  $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
   $availability_type = $bee_settings['bookable_type'];
 
   $field_name = 'field_availability_' . $availability_type . '_target_id';
@@ -235,7 +239,9 @@ function bee_webform_get_available_units_for_node($node, WebformSubmission $webf
   $start_date = $data[$bee_element_id]['start_date'];
   $end_date = $data[$bee_element_id]['end_date'];
 
-  $bee_settings = \Drupal::config('node.type.' . $node->bundle())->get('bee');
+  $node_type = NodeType::load($node->bundle());
+  assert($node_type instanceof NodeType);
+  $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
   $drupal_units = [];
   foreach ($node->get('field_availability_' . $bee_settings['bookable_type']) as $unit) {

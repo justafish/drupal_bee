@@ -30,8 +30,9 @@ function bee_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_type_edit_form' || $form_id == 'node_type_add_form') {
     if (\Drupal::currentUser()->hasPermission('administer bee settings')) {
       $node_type = $form_state->getFormObject()->getEntity();
+      assert($node_type instanceof NodeType);
 
-      $bee_settings = \Drupal::config('node.type.' . $node_type->id())->get('bee');
+      $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
       $form['bee'] = [
         '#type' => 'details',
@@ -117,8 +118,9 @@ function bee_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   }
   elseif (preg_match('/^node_.*_edit_form$/', $form_id)) {
     $node = $form_state->getFormObject()->getEntity();
-
-    $bee_settings = \Drupal::config('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     if (isset($bee_settings['bookable']) && $bee_settings['bookable']) {
       $units_count = count($node->get('field_availability_' . $bee_settings['bookable_type'])->getValue());
@@ -253,8 +255,9 @@ function bee_node_add_more_units_submit($form, FormStateInterface $form_state) {
 
   if (is_numeric($number_units) && $number_units > 0) {
     $node = $form_state->getFormObject()->getEntity();
-
-    $bee_settings = \Drupal::config('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     $units_ids = $node->get('field_availability_' . $bee_settings['bookable_type'])->getValue();
 
@@ -308,6 +311,7 @@ function bee_node_add_more_units_ajax_callback($form, FormStateInterface $form_s
  */
 function bee_node_type_edit_form_submit(array &$form, FormStateInterface $form_state) {
   $node_type = $form_state->getFormObject()->getEntity();
+  assert($node_type instanceof NodeType);
 
   $bee_settings = $form_state->getValue('bee');
 
@@ -383,7 +387,7 @@ function bee_node_type_edit_form_submit(array &$form, FormStateInterface $form_s
       }
     }
 
-    \Drupal::configFactory()->getEditable('node.type.' . $node_type->id())->set('bee', $bee_settings)->save();
+    $node_type->setThirdPartySetting('bee', 'bee', $bee_settings)->save();
   }
   else {
     if (isset($bee_settings['type_id'])) {
@@ -405,7 +409,7 @@ function bee_node_type_edit_form_submit(array &$form, FormStateInterface $form_s
       $bat_type->delete();
     }
 
-    \Drupal::configFactory()->getEditable('node.type.' . $node_type->id())->clear('bee')->save();
+    $node_type->unsetThirdPartySetting('bee', 'bee')->save();
   }
 }
 
@@ -422,7 +426,9 @@ function bee_node_presave(EntityInterface $node) {
  * Implements hook_ENTITY_TYPE_insert().
  */
 function bee_node_insert(EntityInterface $node) {
-  $bee_settings = \Drupal::config('node.type.' . $node->bundle())->get('bee');
+  $node_type = NodeType::load($node->bundle());
+  assert($node_type instanceof NodeType);
+  $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
   if (isset($bee_settings['bookable']) && $bee_settings['bookable']) {
     if ($bee_settings['payment']) {
@@ -450,7 +456,9 @@ function bee_node_insert(EntityInterface $node) {
  * Implements hook_ENTITY_TYPE_delete().
  */
 function bee_node_delete(EntityInterface $node) {
-  $bee_settings = \Drupal::config('node.type.' . $node->bundle())->get('bee');
+  $node_type = NodeType::load($node->bundle());
+  assert($node_type instanceof NodeType);
+  $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
   if ($node->hasField('field_availability_' . $bee_settings['bookable_type'])) {
     if ($bat_unit = $node->get('field_availability_' . $bee_settings['bookable_type'])->entity) {
@@ -1436,7 +1444,9 @@ function bee_preprocess_bat_event_series(array &$variables) {
  * @return \Drupal\commerce_price\Price
  */
 function bee_get_unit_price(Node $node, Booking $booking, DateTime $start_date, DateTime $end_date) {
-  $bee_settings = \Drupal::config('node.type.' . $node->bundle())->get('bee');
+  $node_type = NodeType::load($node->bundle());
+  assert($node_type instanceof NodeType);
+  $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
   $interval = $start_date->diff($end_date);
 

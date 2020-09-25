@@ -43,7 +43,8 @@ class WebformBeeReservationForm extends WebformCompositeBase {
     $options = [];
 
     foreach ($node_types as $node_type) {
-      $bee_settings = $this->configFactory->get('node.type.' . $node_type->id())->get('bee');
+      assert($node_type instanceof NodeType);
+      $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
       if (!empty($bee_settings['bookable'])) {
         $options[$node_type->id()] = $node_type->label();
@@ -81,7 +82,8 @@ class WebformBeeReservationForm extends WebformCompositeBase {
 
     if (count($value) > 1) {
       foreach ($value as $node_type) {
-        $bee_settings = \Drupal::configFactory()->get('node.type.' . $node_type)->get('bee');
+        assert($node_type instanceof NodeType);
+        $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
         if (isset($bee_settings['bookable_type'])) {
           if ($bookable_type) {

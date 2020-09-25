@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\Access\AccessInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\node\Entity\Node;
+use Drupal\node\Entity\NodeType;
 
 /**
  *
@@ -49,7 +50,9 @@ class BeeAddReservationAccessCheck implements AccessInterface {
    *   A \Drupal\Core\Access\AccessInterface constant value.
    */
   public function access(AccountInterface $account, Node $node = NULL) {
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    assert($node_type instanceof NodeType);
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     if (isset($bee_settings['bookable']) && $bee_settings['bookable']) {
       if ($account->hasPermission('create bee reservation')) {

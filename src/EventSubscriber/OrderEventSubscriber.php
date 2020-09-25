@@ -4,6 +4,7 @@ namespace Drupal\bee\EventSubscriber;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\node\Entity\NodeType;
 use Drupal\state_machine\Event\WorkflowTransitionEvent;
 use RRule\RRule;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -65,7 +66,9 @@ class OrderEventSubscriber implements EventSubscriberInterface {
           $start_date = new \DateTime($booking->get('booking_start_date')->value);
           $end_date = new \DateTime($booking->get('booking_end_date')->value);
 
-          $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+          $node_type = NodeType::load($node->bundle());
+          assert($node_type instanceof NodeType);
+          $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
           if ($bee_settings['bookable_type'] == 'daily') {
             $booked_state = bat_event_load_state_by_machine_name('bee_daily_booked');
@@ -162,7 +165,8 @@ class OrderEventSubscriber implements EventSubscriberInterface {
    * return array
    */
   protected function getAvailableUnits($node, $start_date, $end_date) {
-    $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
+    $node_type = NodeType::load($node->bundle());
+    $bee_settings = $node_type->getThirdPartySetting('bee', 'bee');
 
     $units_ids = [];
     foreach ($node->get('field_availability_' . $bee_settings['bookable_type']) as $unit) {

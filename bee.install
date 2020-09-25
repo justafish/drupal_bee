@@ -1,6 +1,7 @@
 <?php
 
 use Drupal\Core\Config\FileStorage;
+use Drupal\node\Entity\NodeType;
 use Drupal\user\RoleInterface;
 
 /**
@@ -94,6 +95,7 @@ function bee_uninstall() {
   $entityFieldManager = Drupal::service('entity_field.manager');
 
   foreach ($node_types as $node_type) {
+    assert($node_type instanceof NodeType);
     $field_names = [
       'field_availability_daily',
       'field_availability_hourly',
@@ -111,7 +113,7 @@ function bee_uninstall() {
       }
     }
 
-    Drupal::configFactory()->getEditable('node.type.' . $node_type->id())->clear('bee')->save();
+    $node_type->unsetThirdPartySetting('bee', 'bee')->save();
   }
 
   $states = [
@@ -192,5 +194,23 @@ function bee_update_8005() {
 function bee_update_8006() {
   if (bat_booking_type_load('bee') !== NULL) {
     bee_create_booking_event_series_reference_field();
+  }
+}
+
+/**
+ * Make sure all config settings for content types are in third party config
+ * storage.
+ */
+function bee_update_8007() {
+  $node_types = \Drupal::entityTypeManager()->getStorage('node_type')->loadMultiple();
+  foreach ($node_types as $node_type) {
+    assert($node_type instanceof NodeType);
+    $bee_settings = Drupal::configFactory()->get('node.type.' . $node_type->id())->get('bee');
+    if (empty($node_type->getThirdPartySetting('bee', 'bee')) && !empty($bee_settings)) {
+      $node_type->setThirdPartySetting('bee', 'bee', $bee_settings)->save();
+    }
+    if (!empty($bee_settings)) {
+      Drupal::configFactory()->getEditable('node.type.' . $node_type->id())->clear('bee')->save();
+    }
   }
 }
