@@ -214,61 +214,17 @@ class AddReservationForm extends FormBase {
       if ($bee_settings['bookable_type'] == 'hourly') {
         if ($node->get('field_use_open_hours')->value) {
           $open_hours = $node->get('field_open_hours')->getValue();
-
-          $start_date_open_hour = FALSE;
-          $end_date_open_hour = FALSE;
-
-          $in_opening_hours = [];
-
-          foreach ($open_hours as $open_hour) {
-            if ($open_hour['day'] == $start_date->format('N')) {
-              $starthours = OfficeHoursDateHelper::format($open_hour['starthours'], 'H:i');
-              $endhours = OfficeHoursDateHelper::format($open_hour['endhours'], 'H:i');
-
-              $start_date_open_hour = [
-                'start' => new DrupalDateTime($date_start_date . ' ' . $starthours),
-                'end' => new DrupalDateTime($date_start_date . ' ' . $endhours),
-              ];
-
-              if ($start_date_open_hour['end'] < $start_date_open_hour['start']) {
-                $start_date_open_hour['end']->modify('+1 day');
-
-                if ($start_date_open_hour['end']->format('Y-m-d') == $date_end_date) {
-                  $end_date_open_hour = $start_date_open_hour;
-                }
-              }
-            }
-
-            if ($date_start_date == $date_end_date) {
-              if ($open_hour['day'] == $end_date->format('N')) {
-                $starthours = OfficeHoursDateHelper::format($open_hour['starthours'], 'H:i');
-                $endhours = OfficeHoursDateHelper::format($open_hour['endhours'], 'H:i');
-
-                $end_date_open_hour = [
-                  'start' => new DrupalDateTime($date_end_date . ' ' . $starthours),
-                  'end' => new DrupalDateTime($date_end_date . ' ' . $endhours),
-                ];
-
-                if ($end_date_open_hour['end'] < $end_date_open_hour['start']) {
-                  $end_date_open_hour['end']->modify('+1 day');
-                }
-              }
-            }
-
-            if ((!$start_date_open_hour || !$end_date_open_hour) ||
-              !(($start_date >= $start_date_open_hour['start'] && $start_date <= $start_date_open_hour['end']) &&
-                ($end_date >= $end_date_open_hour['start'] && $end_date <= $end_date_open_hour['end']))) {
-              $in_opening_hours[] = FALSE;
-            }
-            else {
-              $in_opening_hours[] = TRUE;
-            }
-          }
-
-          if (!in_array(TRUE, $in_opening_hours)) {
+          $open_hours = array_filter($open_hours, function ($open_hour) use ($start_date) {
+            return $open_hour['day'] === $start_date->format('w');
+          });
+          $open_hours = array_filter($open_hours, function ($open_hour) use ($end_date) {
+            $end_date_time = (int) $end_date->format('Gi');
+            return $end_date_time <= $open_hour['endhours'];
+          });
+          $relevant_open_hour = reset($open_hours);
+          if (count($open_hours) !== 1 || $relevant_open_hour['starthours'] > (int) $start_date->format('Gi')) {
             $form_state->setError($form, $this->t('Please select start and end times within the opening hours.'));
           }
-
         }
       }
 
