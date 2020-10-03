@@ -453,20 +453,8 @@ class AddReservationForm extends FormBase {
         $event->set('event_state_reference', $booked_state->id());
       }
 
-      if (isset($values['repeat']) && $values['repeat']) {
-        $bee_settings = $this->configFactory->get('node.type.' . $node->bundle())->get('bee');
-
-        foreach ($node->get('field_availability_' . $bee_settings['bookable_type']) as $unit) {
-          if ($unit->entity) {
-            $event->set('event_bat_unit_reference', $unit->entity->id());
-          }
-        }
-      }
-      else {
-        $available_units = $this->getAvailableUnits($values['node'], $values['start_date'], $values['end_date']);
-
-        $event->set('event_bat_unit_reference', reset($available_units));
-      }
+      $available_units = $this->getAvailableUnits($values['node'], $values['start_date'], $values['end_date']);
+      $event->set('event_bat_unit_reference', reset($available_units));
 
       if (isset($values['event_series'])) {
         $event->set('event_series', $values['event_series']);
